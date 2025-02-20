@@ -15,7 +15,7 @@ class boardSpot(object):
         return str(boardSpot.value)
 
     def isMine(self):
-        return boardSpot.value == -1:
+        return boardSpot.value == -1
     
     def getValue(self):
         return boardSpot.value
