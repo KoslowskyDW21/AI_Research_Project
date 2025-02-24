@@ -1,7 +1,10 @@
 import copy
 import time
+import itertools
 
 numAllocations = 0
+numTestsRun = 0
+numBoardsSolved = 0
 
 class boardSpot(object):
     value = 0
@@ -203,6 +206,7 @@ def backtrack(board, x=0, y=0, verbosity=0):
 
 def solveBacktracking(board, verbosity=0):
     global numAllocations
+    global numBoardsSolved
 
     numAllocations = 0
     print("Starting board:")
@@ -213,24 +217,50 @@ def solveBacktracking(board, verbosity=0):
     if answer:
         print("Flag locations:")
         print(answer)
+        numBoardsSolved += 1
     else:
         print("No solution found.")
     print("Number of allocations: " + str(numAllocations))
     print("Elapsed time: {:.4f} seconds".format(end_time - start_time))
 
+
+def testAllBoards(boardWidth, boardHeight, numMines, verbosity=0, timeout=10):
+    global numTestsRun
+    global numBoardsSolved
+    numTestsRun = 0
+    numBoardsSolved = 0
+
+    all_positions = [(x, y) for x in range(boardWidth) for y in range(boardHeight) if (x, y) != (0, 0)]
+    mine_combinations = itertools.combinations(all_positions, numMines)
+
+    for mineCoordinates in mine_combinations:
+        board = boardClass(boardWidth, boardHeight, numMines, mineCoordinates)
+        board.makeMove(0, 0)
+        print("Testing board with mines at:", mineCoordinates)
+        solveBacktracking(board, verbosity)
+        print("\n")
+        numTestsRun += 1
+
 def testAlgorithms():
+    """
     print("Testing backtracking on the following 4 by 3 board:")
     solveBacktracking(smallBoard())
 
     print("Testing backtracking on the following 4 by 3 invalid board:")
-    solveBacktracking(smallBoardIncorrect())
+    #solveBacktracking(smallBoardIncorrect())
 
-    """
+    
     print("Testing backtracking on the following 10 by 10 board:")
-    solveBacktracking(mediumBoard(), 2)"""
+    solveBacktracking(mediumBoard(), 2)
 
     print("Testing backtracking on the following 10 by 10 board:")
     solveBacktracking(mediumBoardPartiallySolved())
+    """
+    
+    print("Solving all combinations of 4 by 4 boards with 3 mines:")
+    testAllBoards(4, 4, 3, 2)
+    print("Number of tests run:", numTestsRun)
+    print("Precentage of boards solved:", numBoardsSolved/numTestsRun)
 
 
 testAlgorithms()
