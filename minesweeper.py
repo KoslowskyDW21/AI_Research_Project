@@ -221,6 +221,27 @@ def solveBacktracking(board, verbosity=0):
     print("Number of allocations: " + str(numAllocations))
     print("Elapsed time: {:.4f} seconds".format(end_time - start_time))
 
+# Author: Jeff Krug
+def findCutset(board):
+    maxRevealedRows: int = -1
+    maxRevealedCols: int = -1
+
+    for y in range(0, board.boardHeight):
+        numCells: int = 0
+        for x in range(0, board.boardWidth):
+            if board.board[y][x].selected and board.board[y][x].value >= 0:
+                numCells += 1
+        maxRevealedRows = max(maxRevealedRows, numCells)
+
+    for x in range(0, board.boardWidth):
+        numCells: int = 0
+        for y in range(0, board.boardHeight):
+            if board.board[y][x].selected and board.board[y][x].value >= 0:
+                numCells += 1
+        maxRevealedCols= max(maxRevealedCols, numCells)
+
+
+    return ("row", maxRevealedRows) if maxRevealedRows >= maxRevealedCols else ("col", maxRevealedCols)
 
 def testAllBoards(boardWidth, boardHeight, numMines, verbosity=0, timeout=10):
     global numTestsRun
