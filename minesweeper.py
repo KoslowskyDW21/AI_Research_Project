@@ -1,6 +1,7 @@
 import copy
 import time
 import itertools
+from typing import Tuple
 
 numAllocations = 0
 numTestsRun = 0
@@ -30,6 +31,7 @@ class boardClass(object):
         self.boardWidth = m_boardWidth
         self.boardHeight = m_boardHeight
         self.numMines = m_numMines
+        self.mineCoords = mineCoordinates # Added by Jeff for cutset conditioning purposes
         self.numFlags = 0
 
         if mineCoordinates:
@@ -222,26 +224,107 @@ def solveBacktracking(board, verbosity=0):
     print("Elapsed time: {:.4f} seconds".format(end_time - start_time))
 
 # Author: Jeff Krug
-def findCutset(board):
+def findCutset(board: boardClass) -> Tuple[str, int]:
     maxRevealedRows: int = -1
     maxRevealedCols: int = -1
+    row: int = -1
+    col: int = -1
 
     for y in range(0, board.boardHeight):
         numCells: int = 0
         for x in range(0, board.boardWidth):
-            if board.board[y][x].selected and board.board[y][x].value >= 0:
+            if board.board[y][x].flagged or board.board[y][x].selected and board.board[y][x].value >= 0:
                 numCells += 1
+        if maxRevealedRows <= numCells: row = y
         maxRevealedRows = max(maxRevealedRows, numCells)
 
     for x in range(0, board.boardWidth):
         numCells: int = 0
         for y in range(0, board.boardHeight):
-            if board.board[y][x].selected and board.board[y][x].value >= 0:
+            if board.board[y][x].flagged or board.board[y][x].selected and board.board[y][x].value >= 0:
                 numCells += 1
+        if maxRevealedCols <= numCells: col = x
         maxRevealedCols= max(maxRevealedCols, numCells)
 
+    return ("row", row) if maxRevealedRows >= maxRevealedCols else ("col", col)
 
-    return ("row", maxRevealedRows) if maxRevealedRows >= maxRevealedCols else ("col", maxRevealedCols)
+# Author: Jeff Krug
+def subBoard(board: boardClass, row: int = -1, col: int = -1) -> list[boardClass]:
+    board1: boardClass
+    board2: boardClass
+
+    if row > -1:
+        rows1: int = row
+        rows2: int = board.boardHeight - 1 - rows1
+
+        mines1: list[Tuple[int, int]] = [(x, y) for (x, y) in board.mineCoords if y < rows1]
+        mines2: list[Tuple[int, int]] = [(x, y - row - 1) for (x, y) in board.mineCoords if y > rows1]
+
+        board1 = boardClass(board.boardWidth, rows1, len(mines1))
+        for x in range(board1.boardWidth):
+            for y in range(board1.boardHeight):
+                board1.board[y][x] = board.board[y][x]
+
+        board2 = boardClass(board.boardWidth, rows2, len(mines2))
+        for x in range(board2.boardWidth):
+            for y in range(board2.boardHeight):
+                board2.board[y][x] = board.board[y + row + 1][x]
+
+        print(len(mines2))
+        print(board.board[2][5].value)
+    else:
+        cols1: int = col
+        cols2: int = board.boardWidth - 1 - cols2
+        mines1: list[Tuple[int, int]] = [(x, y) for (x, y) in board.mineCoords if x < cols1]
+        mines2: list[Tuple[int, int]] = [(x - col - 1, y) for (x, y) in board.mineCoords if x > cols1]
+
+        board1 = boardClass(cols1, board.boardHeight, len(mines1), mines1)
+        board1 = boardClass(cols2, board.boardHeight, len(mines2), mines2)
+
+    return [board1, board2]
+
+def solveCutsetConditioning(board: boardClass, verbosity: int):
+    answer
+
+    cutset: Tuple[str, int] = findCutset(board)
+    subBoards: list[boardClass] = subBoard(board, row=cutset[1]) if cutset[0] == "row" else subBoard(board, col=cutset[1])
+
+    print(subBoards[0])
+    print(subBoards[1])
+
+    print(cutset)
+
+    emptyCells: list[int] = []
+    x: int
+    y: int
+
+    if cutset[0] == "row":
+        y = cutset[1]
+
+        for x in range(board.boardWidth):
+            if board.board[y][x].selected: emptyCells.append(x)
+        
+        numMines = len([(x1, y1) for (x1, y1) in board.mineCoords if y1 == y])
+
+        if numMines == 0:
+            pass          
+        elif len(emptyCells) == numMines:
+            for cell in emptyCells:
+                board.toggleFlag(cell, y)
+        
+        subAnswer1 = backtrack(subBoards[0], verbosity=verbosity)
+        subAnswer2 = backtrack(subBoards[1], verbosity=verbosity)
+        
+        
+
+    # else:
+    #     x = cutset[1]
+
+    #     for y in range(board.boardHeight):
+    #         if board.board[y][x].selected: emptyCells.append(y)
+
+    print(answer)
+    
 
 def testAllBoards(boardWidth, boardHeight, numMines, verbosity=0, timeout=10):
     global numTestsRun
@@ -282,4 +365,7 @@ def testAlgorithms():
     print("Precentage of boards solved:", numBoardsSolved/numTestsRun)
 
 
-testAlgorithms()
+# testAlgorithms()
+board: boardClass = mediumBoard()
+print(board)
+solveCutsetConditioning(board, 0)
