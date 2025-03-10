@@ -474,39 +474,6 @@ def cutsetConditioning(board: boardClass, verbosity: int):
         # is not necessary
         answer = solveRows(board, subBoards[0], subBoards[1], y, verbosity) 
 
-    # The code will never run this else statement because I removed the column functionality
-    else:
-        pass 
-        # x = cutset[1]
-
-        # for y in range(board.boardHeight):
-        #     if board.board[y][x].selected: emptyCells.append(y)
-
-        # if numMines == 0:
-        #     pass          
-        # elif len(emptyCells) == numMines:
-        #     for cell in emptyCells:
-        #         board.toggleFlag(x, cell)
-        # else:
-        #     mineCells = [0 for i in range(len(emptyCells))]
-
-        #     for i in range(numMines):
-        #         mineCells[i] = 1
-
-        #     for permutation in itertools.permutations(mineCells, len(emptyCells)):
-        #         for coord in permutation:
-        #             board.toggleFlag(x, coord[1])
-        #         answer = solveCols(board, subBoards[0], subBoards[1], x, verbosity)
-
-        #         if answer:
-        #             print(answer)
-        #             return
-
-        # answer = solveCols(board, subBoards[0], subBoards[1], x, verbosity) 
-
-    #print(subBoards[0].numMines)
-    #print(subBoards[1].numMines)
-    #print("Did not calc permutations")
     return answer
     
 def solveCutsetConditioning(board: boardClass, verbosity: int):
@@ -530,26 +497,6 @@ def solveCutsetConditioning(board: boardClass, verbosity: int):
     cutsetConditioning(board, verbosity)
 
 # Author: David Koslowsky
-# tests all possible boards with the given dimensions and number of mines
-# prints the number of tests run and the percentage of boards solved
-def testAllBoards(boardWidth, boardHeight, numMines, verbosity=0, timeout=10):
-    global numTestsRun
-    global numBoardsSolved
-    numTestsRun = 0
-    numBoardsSolved = 0
-
-    all_positions = [(x, y) for x in range(boardWidth) for y in range(boardHeight) if (x, y) != (0, 0)]
-    mine_combinations = itertools.combinations(all_positions, numMines)
-
-    for mineCoordinates in mine_combinations:
-        board = boardClass(boardWidth, boardHeight, numMines, mineCoordinates)
-        board.makeMove(0, 0)
-        print("Testing board with mines at:", mineCoordinates)
-        solveBacktracking(board, verbosity)
-        print("\n")
-        numTestsRun += 1
-
-# Author: David Koslowsky
 # creates a random board with the given dimensions and number of mines
 # clicks at 0, 0 to reveal some spots
 # sample does not include 0, 0 to avoid clicking on a mine
@@ -560,43 +507,9 @@ def createRandomBoard(n, m, k):
     board.makeMove(0, 0)
     return board
 
-# Author: David Koslowsky
-# main method called at runtime
-# tests the algorithms on a few boards
-def testAlgorithms():
-    """
-    print("Testing backtracking on the following 4 by 3 board:")
-    solveBacktracking(smallBoard())
-
-    print("Testing backtracking on the following 4 by 3 invalid board:")
-    #solveBacktracking(smallBoardIncorrect())
-
-    
-    print("Testing backtracking on the following 10 by 10 board:")
-    solveBacktracking(mediumBoard(), 2)
-
-    print("Testing backtracking on the following 10 by 10 board:")
-    solveBacktracking(mediumBoardPartiallySolved())
-    """
-    
-    print("Solving all combinations of 4 by 4 boards with 3 mines:")
-    testAllBoards(4, 4, 3, 2)
-    print("Number of tests run:", numTestsRun)
-    print("Precentage of boards solved:", numBoardsSolved/numTestsRun)
-
-
-# testAlgorithms()
-#board: boardClass = smallBoard()
-#print(board)
-#solveCutsetConditioning(board, 0)
 
 def main():
-    n = 4  # Width of the board
-    m = 4  # Height of the board
-    k = 2  # Number of mines
-
-    # Create a random board
-    board = createRandomBoard(n, m, k)
+    board = smallBoard()
 
     # Solve the board using backtracking
     print("Solving with backtracking:")
@@ -608,4 +521,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    pass
