@@ -264,90 +264,6 @@ def solveBacktracking(board: boardClass, verbosity=0):
     print("Number of allocations: " + str(numAllocations))
     print("Elapsed time: {:.4f} seconds".format(end_time - start_time))
 
-# Author: David Koslowsky and Jeff Krug
-def backtrackCutsetRow(board, x=0, y=0, verbosity=0):
-        if verbosity > 1:
-            print("Board state:")
-            print(board)
-
-        # base case for when the board has been solved
-        if board.numFlags == board.numMines:
-
-            if board.isConsistent():
-                print("Solution found:")
-                print(board)
-                return board.getFlagPlacements()
-            else:
-                if verbosity > 0:
-                    print("Max mines reached, but board is inconsistent. Backtracking...")
-                return None
-        
-        # try placing a flag at every unselected spot on the board
-        for y in range(1, board.boardHeight):
-            for x in range(board.boardWidth):
-                if(not (board.getSpot(x, y).selected or board.getSpot(x, y).flagged)):
-                    boardCopy = board.deepCopy()
-                    boardCopy.toggleFlag(x, y)
-                    # if the board is still viable, continue the search
-                    if boardCopy.isViablePath():
-                        if verbosity > 0:
-                            print("Flagged spot at " + str(x) + ", " + str(y))
-                        result = backtrackCutsetRow(boardCopy, x, y, verbosity)
-                        # if a solution is found, return it up the stack
-                        if result:
-                            return result
-                    elif verbosity > 1:
-                        print("Attempted to flag spot at " + str(x) + ", " + str(y) + " but it is inconsistent")
-                        print(boardCopy)
-
-
-        # getting to this point means no solution was found on this path
-        if verbosity > 0:
-            print("No solution found on this path. Backtracking...")
-        return None
-
-# Author: David Koslowsky and Jeff Krug
-def backtrackCutsetCol(board, x=0, y=0, verbosity=0):
-        if verbosity > 1:
-            print("Board state:")
-            print(board)
-
-        # base case for when the board has been solved
-        if board.numFlags == board.numMines:
-
-            if board.isConsistent():
-                print("Solution found:")
-                print(board)
-                return board.getFlagPlacements()
-            else:
-                if verbosity > 0:
-                    print("Max mines reached, but board is inconsistent. Backtracking...")
-                return None
-        
-        # try placing a flag at every unselected spot on the board
-        for y in range(board.boardHeight):
-            for x in range(1, board.boardWidth):
-                if(not (board.getSpot(x, y).selected or board.getSpot(x, y).flagged)):
-                    boardCopy = board.deepCopy()
-                    boardCopy.toggleFlag(x, y)
-                    # if the board is still viable, continue the search
-                    if boardCopy.isViablePath():
-                        if verbosity > 0:
-                            print("Flagged spot at " + str(x) + ", " + str(y))
-                        result = backtrack(boardCopy, x, y, verbosity)
-                        # if a solution is found, return it up the stack
-                        if result:
-                            return result
-                    elif verbosity > 1:
-                        print("Attempted to flag spot at " + str(x) + ", " + str(y) + " but it is inconsistent")
-                        print(boardCopy)
-
-
-        # getting to this point means no solution was found on this path
-        if verbosity > 0:
-            print("No solution found on this path. Backtracking...")
-        return None
-
 # Author: Jeff Krug
 def findCutset(board: boardClass) -> Tuple[str, int]:
     maxRevealedRows: int = -1
@@ -416,7 +332,7 @@ def subBoard(board: boardClass, row: int = -1, col: int = -1) -> list[boardClass
     return [board1, board2]
 
 # Author: Jeff Krug
-def solveRows(board: boardClass, subBoard1: boardClass, subBoard2: boardClass, y: int, verbosity: int):
+def solveRows(board: boardClass, subBoard1: boardClass, subBoard2: boardClass, y: int, verbosity: int) -> list[Tuple[int, int]]:
     for x1 in range(subBoard1.boardWidth):
         subBoard1.board[subBoard1.boardHeight - 1][x1] = board.board[y][x1]
 
@@ -426,17 +342,21 @@ def solveRows(board: boardClass, subBoard1: boardClass, subBoard2: boardClass, y
     print(subBoard1)
     print(subBoard2)
 
-    subAnswer1 = backtrack(subBoard1, verbosity=verbosity)
-    subAnswer2 = backtrackCutsetRow(subBoard2, verbosity=verbosity)
+    subAnswer1 = backtrack(subBoard1, range(subBoard1.boardWidth), range(subBoard1.boardHeight - 1), verbosity=verbosity)
+    subAnswer2 = backtrack(subBoard2, range(subBoard2.boardWidth), range(1, subBoard2.boardHeight), verbosity=verbosity)
+
+    subAnswer1 = []
+
+    print(subAnswer1)
+    print(subAnswer2)
 
     if subAnswer1 is None or subAnswer2 is None:
         return None
 
-    minesSet: Set[Tuple[int, int]] = set()
-    minesSet.add((x, y) for (x, y) in subAnswer1)
-    minesSet.add((x, y) for (x, y) in subAnswer2)
-
-    answer: list[Tuple[int, int]] = [(x, y) for (x, y) in minesSet]
+    subAnswers = subAnswer1 + subAnswer2
+    minesSet: set[Tuple[int, int]] = set(subAnswers)
+    answer = list(minesSet)
+    
     return answer
 
 # Author: Jeff Krug
@@ -448,7 +368,7 @@ def solveCols(board: boardClass, subBoard1: boardClass, subBoard2: boardClass, x
         subBoard2.board[y2][0] = board.board[y2][x]
 
     subAnswer1 = backtrack(subBoard1, verbosity=verbosity)
-    subAnswer2 = backtrackCutsetCol(subBoard2, verbosity=verbosity)
+    subAnswer2 = backtrack(subBoard2, verbosity=verbosity)
 
     if subAnswer1 is None or subAnswer2 is None:
         return None
@@ -482,7 +402,6 @@ def solveCutsetConditioning(board: boardClass, verbosity: int):
             if board.board[y][x].selected: emptyCells.append(x)
         
         numMines = len([(x1, y1) for (x1, y1) in board.mineCoords if y1 == y])
-        # originalFlags = [x for x in board.board[y] if x.flagged]
         originalFlags: list[int] = []
 
         for x in range(len(board.board[y])):
@@ -548,7 +467,8 @@ def solveCutsetConditioning(board: boardClass, verbosity: int):
     print(subBoards[0].numMines)
     print(subBoards[1].numMines)
     print("Did not calc permutations")
-    print(answer)
+    for coord in answer:
+        print(coord)
     
 # Author: David Koslowsky
 # tests all possible boards with the given dimensions and number of mines
@@ -607,9 +527,9 @@ def testAlgorithms():
 
 
 # testAlgorithms()
-#board: boardClass = smallBoard()
-#print(board)
-#solveCutsetConditioning(board, 0)
+board: boardClass = smallBoard()
+print(board)
+solveCutsetConditioning(board, 0)
 
 def main():
     n = 10  # Width of the board
@@ -632,4 +552,5 @@ def main():
     #solveCutsetConditioning(board, verbosity=2)
 
 if __name__ == "__main__":
-    main()
+    # main()
+    pass
