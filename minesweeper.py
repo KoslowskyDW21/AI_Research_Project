@@ -200,7 +200,7 @@ def mediumBoardPartiallySolved():
 # returns a list of Tuples containing x, y coordinates for all the flagged spots on the board
 # if no solution is found, returns None
 # verbosity: 0 = no output, 1 = basic output, 2 = detailed output
-def backtrack(board, x=0, y=0, verbosity=0):
+def backtrack(board, xRange, yRange, verbosity=0):
         if verbosity > 1:
             print("Board state:")
             print(board)
@@ -218,8 +218,8 @@ def backtrack(board, x=0, y=0, verbosity=0):
                 return None
         
         # try placing a flag at every unselected spot on the board
-        for y in range(board.boardHeight):
-            for x in range(board.boardWidth):
+        for y in yRange:
+            for x in xRange:
                 if(not (board.getSpot(x, y).selected or board.getSpot(x, y).flagged)):
                     boardCopy = board.deepCopy()
                     boardCopy.toggleFlag(x, y)
@@ -227,7 +227,7 @@ def backtrack(board, x=0, y=0, verbosity=0):
                     if boardCopy.isViablePath():
                         if verbosity > 0:
                             print("Flagged spot at " + str(x) + ", " + str(y))
-                        result = backtrack(boardCopy, x, y, verbosity)
+                        result = backtrack(boardCopy, xRange, yRange, verbosity)
                         # if a solution is found, return it up the stack
                         if result:
                             return result
@@ -245,7 +245,7 @@ def backtrack(board, x=0, y=0, verbosity=0):
 # tracks useful data for the backtracking algorithm
 # prints out the number of times the board was allocated and the time taken to solve the board
 # also prints the starting board and the solved board (if one is found) along with the mine locations
-def solveBacktracking(board, verbosity=0):
+def solveBacktracking(board: boardClass, verbosity=0):
     global numAllocations
     global numBoardsSolved
 
@@ -253,7 +253,7 @@ def solveBacktracking(board, verbosity=0):
     print("Starting board:")
     print(board)
     start_time = time.time()
-    answer = backtrack(board, verbosity=verbosity)
+    answer = backtrack(board, range(board.boardWidth), range(board.boardHeight), verbosity)
     end_time = time.time()
     if answer:
         print("Flag locations:")
@@ -617,7 +617,7 @@ def main():
     k = 4  # Number of mines
 
     # Create a random board
-    board = smallBoard() #createRandomBoard(n, m, k)
+    board = createRandomBoard(n, m, k)
 
     # Print the initial board state
     print("Initial board state:")
