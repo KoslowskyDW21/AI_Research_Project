@@ -2,6 +2,7 @@ import copy
 import time
 import itertools
 from typing import Tuple, Set
+import random
 
 numAllocations = 0
 numTestsRun = 0
@@ -553,6 +554,17 @@ def testAllBoards(boardWidth, boardHeight, numMines, verbosity=0, timeout=10):
         numTestsRun += 1
 
 # Author: David Koslowsky
+# creates a random board with the given dimensions and number of mines
+# clicks at 0, 0 to reveal some spots
+# sample does not include 0, 0 to avoid clicking on a mine
+def createRandomBoard(n, m, k):
+    all_positions = [(x, y) for x in range(n) for y in range(m) if (x, y) != (0, 0)]
+    mine_positions = random.sample(all_positions, k)
+    board = boardClass(n, m, k, mine_positions)
+    board.makeMove(0, 0)
+    return board
+
+# Author: David Koslowsky
 # main method called at runtime
 # tests the algorithms on a few boards
 def testAlgorithms():
@@ -578,6 +590,29 @@ def testAlgorithms():
 
 
 # testAlgorithms()
-board: boardClass = smallBoard()
-print(board)
-solveCutsetConditioning(board, 0)
+#board: boardClass = smallBoard()
+#print(board)
+#solveCutsetConditioning(board, 0)
+
+def main():
+    n = 10  # Width of the board
+    m = 10  # Height of the board
+    k = 4  # Number of mines
+
+    # Create a random board
+    board = smallBoard() #createRandomBoard(n, m, k)
+
+    # Print the initial board state
+    print("Initial board state:")
+    print(board)
+
+    # Solve the board using backtracking
+    print("Solving with backtracking:")
+    solveBacktracking(board, verbosity=2)
+
+    # Solve the board using cutset conditioning
+    #print("Solving with cutset conditioning:")
+    #solveCutsetConditioning(board, verbosity=2)
+
+if __name__ == "__main__":
+    main()
