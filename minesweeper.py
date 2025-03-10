@@ -265,6 +265,8 @@ def solveBacktracking(board: boardClass, verbosity=0):
     print("Elapsed time: {:.4f} seconds".format(end_time - start_time))
 
 # Author: Jeff Krug
+# This is the first step of the algorithm--finding a cutset
+# It selects a single row as the cutset--the row with the least number of empty cells
 def findCutset(board: boardClass) -> Tuple[str, int]:
     maxRevealedRows: int = -1
     maxRevealedCols: int = -1
@@ -279,28 +281,37 @@ def findCutset(board: boardClass) -> Tuple[str, int]:
         if maxRevealedRows <= numCells: row = y
         maxRevealedRows = max(maxRevealedRows, numCells)
 
-    for x in range(0, board.boardWidth):
-        numCells: int = 0
-        for y in range(0, board.boardHeight):
-            if board.board[y][x].flagged or board.board[y][x].selected and board.board[y][x].value >= 0:
-                numCells += 1
-        if maxRevealedCols <= numCells: col = x
-        maxRevealedCols= max(maxRevealedCols, numCells)
+    # I simply ran out of time to implement column cutsets, so I commented out this section of code.
 
+    # for x in range(0, board.boardWidth):
+    #     numCells: int = 0
+    #     for y in range(0, board.boardHeight):
+    #         if board.board[y][x].flagged or board.board[y][x].selected and board.board[y][x].value >= 0:
+    #             numCells += 1
+    #     if maxRevealedCols <= numCells: col = x
+    #     maxRevealedCols= max(maxRevealedCols, numCells)
+
+    # The function returns the number of the row selected
     return ("row", row) if maxRevealedRows >= maxRevealedCols else ("col", col)
 
 # Author: Jeff Krug
+# Splits a board into two subboards that can be solved separately
 def subBoard(board: boardClass, row: int = -1, col: int = -1) -> list[boardClass]:
     board1: boardClass
     board2: boardClass
 
     if row > -1:
+        # Determine the size of each subboard
+        # Each subboard is the large enough to include the cutset, so when it is solved, it
+        # can take the cutset into account, but not modify its values
         rows1: int = row + 1
         rows2: int = board.boardHeight - rows1 + 1
 
+        # Determine the number of mines for each subboard
         mines1: list[Tuple[int, int]] = [(x, y) for (x, y) in board.mineCoords if y < rows1 - 1]
         mines2: list[Tuple[int, int]] = [(x, y - row) for (x, y) in board.mineCoords if y >= rows1]
 
+        # Create the boards and fill in the values from the orginal board
         board1 = boardClass(board.boardWidth, rows1, len(mines1))
         for x in range(board1.boardWidth):
             for y in range(board1.boardHeight):
@@ -311,8 +322,7 @@ def subBoard(board: boardClass, row: int = -1, col: int = -1) -> list[boardClass
             for y in range(1, board2.boardHeight):
                 board2.board[y][x] = board.board[y + row][x]
 
-        # print(len(mines2))
-        # print(board.board[2][5].value)
+    # The else statement never runs because I removed column functionality
     else:
         cols1: int = col + 1
         cols2: int = board.boardWidth - cols2 + 1
@@ -332,20 +342,31 @@ def subBoard(board: boardClass, row: int = -1, col: int = -1) -> list[boardClass
     return [board1, board2]
 
 # Author: Jeff Krug
+# Runs backtracking search on the subboards and combines the answers
 def solveRows(board: boardClass, subBoard1: boardClass, subBoard2: boardClass, y: int, verbosity: int) -> list[Tuple[int, int]]:
+    # Fill in the cutset with the proper mines for subboard one
     for x1 in range(subBoard1.boardWidth):
         subBoard1.board[subBoard1.boardHeight - 1][x1] = board.board[y][x1]
 
+    # Fill in the cutset with the proper mines for subboard two
     for x2 in range(subBoard2.boardWidth):
         subBoard2.board[0][x2] = board.board[y][x2]
 
     print(subBoard1)
     print(subBoard2)
 
+    # Run backtracking search on the first subboard without altering the cutset
     subAnswer1 = backtrack(subBoard1, range(subBoard1.boardWidth), range(subBoard1.boardHeight - 1), verbosity=verbosity)
+    # Run backtracking search on the second subboard without altering the cutset
     subAnswer2 = backtrack(subBoard2, range(subBoard2.boardWidth), range(1, subBoard2.boardHeight), verbosity=verbosity)
 
-    subAnswer1 = []
+    # Backtracking search returns None if there are no mines to be found
+    # This code sets the answers to an empty list, so the algorithm doesn't crash
+    if(subBoard1.numMines == 0):
+        subAnswer1 = []
+    if(subBoard2.numMines == 0):
+        subAnswer2 = []
+    
 
     print(subAnswer1)
     print(subAnswer2)
@@ -353,6 +374,7 @@ def solveRows(board: boardClass, subBoard1: boardClass, subBoard2: boardClass, y
     if subAnswer1 is None or subAnswer2 is None:
         return None
 
+    # Combine answers and remove duplicates
     subAnswers = subAnswer1 + subAnswer2
     minesSet: set[Tuple[int, int]] = set(subAnswers)
     answer = list(minesSet)
@@ -360,6 +382,7 @@ def solveRows(board: boardClass, subBoard1: boardClass, subBoard2: boardClass, y
     return answer
 
 # Author: Jeff Krug
+# This code never runs
 def solveCols(board: boardClass, subBoard1: boardClass, subBoard2: boardClass, x: int, verbosity: int):
     for y1 in range(subBoard1.boardHeight):
         subBoard1.board[y1][subBoard1.boardWidth - 1] = board.board[y1][x]
@@ -380,9 +403,11 @@ def solveCols(board: boardClass, subBoard1: boardClass, subBoard2: boardClass, x
     answer: list[Tuple[int, int]] = [(x, y) for (x, y) in minesSet]
     return answer
 
-def solveCutsetConditioning(board: boardClass, verbosity: int):
+
+def cutsetConditioning(board: boardClass, verbosity: int):
     answer: list[Tuple[int, int]]
 
+    # The cutset is found, and the subboards are generated
     cutset: Tuple[str, int] = findCutset(board)
     subBoards: list[boardClass] = subBoard(board, row=cutset[1]) if cutset[0] == "row" else subBoard(board, col=cutset[1])
 
@@ -398,12 +423,14 @@ def solveCutsetConditioning(board: boardClass, verbosity: int):
     if cutset[0] == "row":
         y = cutset[1]
 
+        # Find the number of empty cells in the cutset
         for x in range(board.boardWidth):
             if board.board[y][x].selected: emptyCells.append(x)
         
         numMines = len([(x1, y1) for (x1, y1) in board.mineCoords if y1 == y])
         originalFlags: list[int] = []
 
+        # Keep track of original mines so they don't get removed in the conditioning
         for x in range(len(board.board[y])):
             if board.board[y][x].flagged:
                 originalFlags.append(x)
@@ -411,65 +438,96 @@ def solveCutsetConditioning(board: boardClass, verbosity: int):
         print(numMines)
         print(originalFlags)
 
+        # This if else tree is step two, conditioning the cutset
+        # It will test try different combinations of mines depending on how many mines are supposed
+        # to be in the cutset
         if numMines - len(originalFlags) == 0:
             pass          
         elif len(emptyCells) == numMines - len(originalFlags):
             for cell in emptyCells:
                 if not cell in originalFlags:
-                    board.toggleFlag(cell, y)                
+                    board.toggleFlag(cell, y)     
+                    numAllocations += 1           
         else:
             mineCells = [0 for i in range(len(emptyCells))]
 
             for i in range(numMines):
                 mineCells[i] = 1
 
+            # Find all combinations of mines
             for permutation in itertools.permutations(mineCells, len(emptyCells)):
                 for i in range(len(permutation)):
                     if permutation[i] == 1:
                         if not i in originalFlags:
                             board.toggleFlag(i, y)
+                            numAllocations += 1
+
+                # This is step three, solving the rest of the problem
                 answer = solveRows(board, subBoards[0], subBoards[1], y, verbosity)
 
                 if answer:
                     print(answer)
                     return
 
+        # This is also step three, and it will run if testing all combinations of mines in the cutset
+        # is not necessary
         answer = solveRows(board, subBoards[0], subBoards[1], y, verbosity) 
 
+    # The code will never run this else statement because I removed the column functionality
     else:
-        x = cutset[1]
+        pass 
+        # x = cutset[1]
 
-        for y in range(board.boardHeight):
-            if board.board[y][x].selected: emptyCells.append(y)
+        # for y in range(board.boardHeight):
+        #     if board.board[y][x].selected: emptyCells.append(y)
 
-        if numMines == 0:
-            pass          
-        elif len(emptyCells) == numMines:
-            for cell in emptyCells:
-                board.toggleFlag(x, cell)
-        else:
-            mineCells = [0 for i in range(len(emptyCells))]
+        # if numMines == 0:
+        #     pass          
+        # elif len(emptyCells) == numMines:
+        #     for cell in emptyCells:
+        #         board.toggleFlag(x, cell)
+        # else:
+        #     mineCells = [0 for i in range(len(emptyCells))]
 
-            for i in range(numMines):
-                mineCells[i] = 1
+        #     for i in range(numMines):
+        #         mineCells[i] = 1
 
-            for permutation in itertools.permutations(mineCells, len(emptyCells)):
-                for coord in permutation:
-                    board.toggleFlag(x, coord[1])
-                answer = solveCols(board, subBoards[0], subBoards[1], x, verbosity)
+        #     for permutation in itertools.permutations(mineCells, len(emptyCells)):
+        #         for coord in permutation:
+        #             board.toggleFlag(x, coord[1])
+        #         answer = solveCols(board, subBoards[0], subBoards[1], x, verbosity)
 
-                if answer:
-                    print(answer)
-                    return
+        #         if answer:
+        #             print(answer)
+        #             return
 
-        answer = solveCols(board, subBoards[0], subBoards[1], x, verbosity) 
+        # answer = solveCols(board, subBoards[0], subBoards[1], x, verbosity) 
 
     print(subBoards[0].numMines)
     print(subBoards[1].numMines)
     print("Did not calc permutations")
-    for coord in answer:
-        print(coord)
+    return answer
     
+def solveCutsetConditioning(board: boardClass, verbosity: int):
+    global numAllocations
+    global numBoardsSolved
+
+    numAllocations = 0
+    print("Starting board:")
+    print(board)
+    start_time = time.time()
+    answer = cutsetConditioning(board, verbosity)
+    end_time = time.time()
+    if answer or answer == []:
+        print("Flag locations:")
+        print(answer)
+        numBoardsSolved += 1
+    else:
+        print("No solution found.")
+    print("Number of allocations: " + str(numAllocations))
+    print("Elapsed time: {:.4f} seconds".format(end_time - start_time))
+    cutsetConditioning(board, verbosity)
+
 # Author: David Koslowsky
 # tests all possible boards with the given dimensions and number of mines
 # prints the number of tests run and the percentage of boards solved
@@ -548,8 +606,8 @@ def main():
     solveBacktracking(board, verbosity=2)
 
     # Solve the board using cutset conditioning
-    #print("Solving with cutset conditioning:")
-    #solveCutsetConditioning(board, verbosity=2)
+    print("Solving with cutset conditioning:")
+    solveCutsetConditioning(board, verbosity=2)
 
 if __name__ == "__main__":
     # main()
