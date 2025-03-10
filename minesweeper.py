@@ -126,7 +126,7 @@ class boardClass(object):
     # returns a list of Tuples containing x, y coordinates for all the flagged spots on the board
     def getFlagPlacements(self):
         return [(x, y) for y in range(self.boardHeight) for x in range(self.boardWidth) if self.board[y][x].flagged]
-    
+
     # Author: David Koslowsky
     # returns the number of flags around the given x, y coordinates
     def flagsAroundLocation(self, x, y):
@@ -255,7 +255,7 @@ def solveBacktracking(board: boardClass, verbosity=0):
     start_time = time.time()
     answer = backtrack(board, range(board.boardWidth), range(board.boardHeight), verbosity)
     end_time = time.time()
-    if answer:
+    if answer or answer == []:
         print("Flag locations:")
         print(answer)
         numBoardsSolved += 1
@@ -614,7 +614,7 @@ def testAlgorithms():
 def main():
     n = 10  # Width of the board
     m = 10  # Height of the board
-    k = 4  # Number of mines
+    k = 0  # Number of mines
 
     # Create a random board
     board = createRandomBoard(n, m, k)
