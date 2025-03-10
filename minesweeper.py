@@ -7,11 +7,15 @@ numAllocations = 0
 numTestsRun = 0
 numBoardsSolved = 0
 
+# Author: RaemondBW
+# class representing a single spot on the board
+# value: -1 for mine, 0-8 for number of mines around the spot
+# selected: true if the spot has been revealed
+# flagged: true if the spot has been flagged as a mine
 class boardSpot(object):
     value = 0
     selected = False
     flagged = False
-
     def __init__(self):
         self.selected = False
 
@@ -24,8 +28,9 @@ class boardSpot(object):
     def getValue(self):
         return boardSpot.value
 
-
 class boardClass(object):
+    # Author: RaemondBW
+    # Edited by David Koslowsky and Jeff Krug
     def __init__(self, m_boardWidth, m_boardHeight, m_numMines, mineCoordinates=None):
         self.board = [[boardSpot() for i in range(m_boardWidth)] for j in range(m_boardHeight)]
         self.boardWidth = m_boardWidth
@@ -38,6 +43,9 @@ class boardClass(object):
             for (x, y) in mineCoordinates:
                 self.addMine(x, y)
 
+    # Author: RaemondBW
+    # Edited by David Koslowsky
+    # prints a visualization of the board to the console
     def __str__(self):
         returnString = " "
         divider = "\n---"
@@ -61,6 +69,7 @@ class boardClass(object):
             returnString += divider
         return returnString
 
+    # Author: RaemondBW
     def addMine(self, x, y):
         self.board[y][x].value = -1
         for i in range(x-1, x+2):
@@ -69,6 +78,11 @@ class boardClass(object):
                     if j >= 0 and j < self.boardHeight and not self.board[j][i].isMine():
                         self.board[j][i].value += 1
 
+    # Author: RaemondBW
+    # Edited by David Koslowsky, adding checks for flags
+    # simulates making a move at the given x and y coordinates
+    # if there are no mines around the spot, it will recursively reveal all adjacent spots
+    # returns true if the move was successful, false if the player hit a mine
     def makeMove(self, x, y):
         if self.board[y][x].flagged:
             print("This spot is flagged. Unflag it first to make a move.")
@@ -84,9 +98,14 @@ class boardClass(object):
                             self.makeMove(i, j)
         return True
     
+    # Author: David Koslowsky
     def getSpot(self, x, y):
         return self.board[y][x]
 
+    # Author: David Koslowsky
+    # flags the spot at the given x and y coordinates
+    # if the spot is already flagged, it will unflag it
+    # increments the global int numAllocations for metrics
     def toggleFlag(self, x, y):
         global numAllocations
         if not self.getSpot(x, y).selected:
@@ -97,12 +116,18 @@ class boardClass(object):
                 self.numFlags -= 1
         numAllocations += 1
 
+    # Author: David Koslowsky
+    # returns a deep copy of the board
     def deepCopy(self):
         return copy.deepcopy(self)
 
+    # Author: David Koslowsky
+    # returns a list of Tuples containing x, y coordinates for all the flagged spots on the board
     def getFlagPlacements(self):
         return [(x, y) for y in range(self.boardHeight) for x in range(self.boardWidth) if self.board[y][x].flagged]
     
+    # Author: David Koslowsky
+    # returns the number of flags around the given x, y coordinates
     def flagsAroundLocation(self, x, y):
         mine_count = 0
         for i in range(x-1, x+2):
@@ -113,6 +138,8 @@ class boardClass(object):
                             mine_count += 1
         return mine_count
     
+    # Author: David Koslowsky
+    # returns true if the board is a viable path, meaning that no revealed spot has more flags around it than its value
     def isViablePath(self):
         for y in range(self.boardHeight):
             for x in range(self.boardWidth):
@@ -122,6 +149,8 @@ class boardClass(object):
                         return False
         return True
 
+    # Author: David Koslowsky
+    # returns true if the board is consistent, meaning that all revealed spots have the correct number of flags around them
     def isConsistent(self):
         for y in range(self.boardHeight):
             for x in range(self.boardWidth):
@@ -165,6 +194,11 @@ def mediumBoardPartiallySolved():
     board.toggleFlag(5, 2)
     return board
 
+# Author: David Koslowsky
+# Backtracking algorithm to solve the minesweeper board
+# returns a list of Tuples containing x, y coordinates for all the flagged spots on the board
+# if no solution is found, returns None
+# verbosity: 0 = no output, 1 = basic output, 2 = detailed output
 def backtrack(board, x=0, y=0, verbosity=0):
         if verbosity > 1:
             print("Board state:")
@@ -182,16 +216,18 @@ def backtrack(board, x=0, y=0, verbosity=0):
                     print("Max mines reached, but board is inconsistent. Backtracking...")
                 return None
         
-        # try every possible move
+        # try placing a flag at every unselected spot on the board
         for y in range(board.boardHeight):
             for x in range(board.boardWidth):
                 if(not (board.getSpot(x, y).selected or board.getSpot(x, y).flagged)):
                     boardCopy = board.deepCopy()
                     boardCopy.toggleFlag(x, y)
+                    # if the board is still viable, continue the search
                     if boardCopy.isViablePath():
                         if verbosity > 0:
                             print("Flagged spot at " + str(x) + ", " + str(y))
                         result = backtrack(boardCopy, x, y, verbosity)
+                        # if a solution is found, return it up the stack
                         if result:
                             return result
                     elif verbosity > 1:
@@ -199,11 +235,15 @@ def backtrack(board, x=0, y=0, verbosity=0):
                         print(boardCopy)
 
 
-        # no moves found
+        # getting to this point means no solution was found on this path
         if verbosity > 0:
             print("No solution found on this path. Backtracking...")
         return None
 
+# Author: David Koslowsky
+# tracks useful data for the backtracking algorithm
+# prints out the number of times the board was allocated and the time taken to solve the board
+# also prints the starting board and the solved board (if one is found) along with the mine locations
 def solveBacktracking(board, verbosity=0):
     global numAllocations
     global numBoardsSolved
@@ -325,7 +365,9 @@ def solveCutsetConditioning(board: boardClass, verbosity: int):
 
     print(answer)
     
-
+# Author: David Koslowsky
+# tests all possible boards with the given dimensions and number of mines
+# prints the number of tests run and the percentage of boards solved
 def testAllBoards(boardWidth, boardHeight, numMines, verbosity=0, timeout=10):
     global numTestsRun
     global numBoardsSolved
@@ -343,6 +385,9 @@ def testAllBoards(boardWidth, boardHeight, numMines, verbosity=0, timeout=10):
         print("\n")
         numTestsRun += 1
 
+# Author: David Koslowsky
+# main method called at runtime
+# tests the algorithms on a few boards
 def testAlgorithms():
     """
     print("Testing backtracking on the following 4 by 3 board:")
