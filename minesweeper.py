@@ -352,8 +352,11 @@ def solveRows(board: boardClass, subBoard1: boardClass, subBoard2: boardClass, y
     for x2 in range(subBoard2.boardWidth):
         subBoard2.board[0][x2] = board.board[y][x2]
 
-    print(subBoard1)
-    print(subBoard2)
+    if verbosity > 1:
+        print("Sub-board 1:")
+        print(subBoard1)
+        print("Sub-board 2:")
+        print(subBoard2)
 
     # Run backtracking search on the first subboard without altering the cutset
     subAnswer1 = backtrack(subBoard1, range(subBoard1.boardWidth), range(subBoard1.boardHeight - 1), verbosity=verbosity)
@@ -367,9 +370,9 @@ def solveRows(board: boardClass, subBoard1: boardClass, subBoard2: boardClass, y
     if(subBoard2.numMines == 0):
         subAnswer2 = []
     
-
-    print(subAnswer1)
-    print(subAnswer2)
+    if verbosity > 1:
+        print(subAnswer1)
+        print(subAnswer2)
 
     if subAnswer1 is None or subAnswer2 is None:
         return None
@@ -411,10 +414,10 @@ def cutsetConditioning(board: boardClass, verbosity: int):
     cutset: Tuple[str, int] = findCutset(board)
     subBoards: list[boardClass] = subBoard(board, row=cutset[1]) if cutset[0] == "row" else subBoard(board, col=cutset[1])
 
-    print(subBoards[0])
-    print(subBoards[1])
-
-    print(cutset)
+    if verbosity > 0:
+        print(subBoards[0])
+        print(subBoards[1])
+        print(cutset)
 
     emptyCells: list[int] = []
     x: int
@@ -435,8 +438,9 @@ def cutsetConditioning(board: boardClass, verbosity: int):
             if board.board[y][x].flagged:
                 originalFlags.append(x)
 
-        print(numMines)
-        print(originalFlags)
+        if verbosity > 0:
+            print(numMines)
+            print(originalFlags)
 
         # This if else tree is step two, conditioning the cutset
         # It will test try different combinations of mines depending on how many mines are supposed
@@ -446,8 +450,7 @@ def cutsetConditioning(board: boardClass, verbosity: int):
         elif len(emptyCells) == numMines - len(originalFlags):
             for cell in emptyCells:
                 if not cell in originalFlags:
-                    board.toggleFlag(cell, y)     
-                    numAllocations += 1           
+                    board.toggleFlag(cell, y)          
         else:
             mineCells = [0 for i in range(len(emptyCells))]
 
@@ -460,14 +463,12 @@ def cutsetConditioning(board: boardClass, verbosity: int):
                     if permutation[i] == 1:
                         if not i in originalFlags:
                             board.toggleFlag(i, y)
-                            numAllocations += 1
 
                 # This is step three, solving the rest of the problem
                 answer = solveRows(board, subBoards[0], subBoards[1], y, verbosity)
 
                 if answer:
-                    print(answer)
-                    return
+                    return answer
 
         # This is also step three, and it will run if testing all combinations of mines in the cutset
         # is not necessary
@@ -503,9 +504,9 @@ def cutsetConditioning(board: boardClass, verbosity: int):
 
         # answer = solveCols(board, subBoards[0], subBoards[1], x, verbosity) 
 
-    print(subBoards[0].numMines)
-    print(subBoards[1].numMines)
-    print("Did not calc permutations")
+    #print(subBoards[0].numMines)
+    #print(subBoards[1].numMines)
+    #print("Did not calc permutations")
     return answer
     
 def solveCutsetConditioning(board: boardClass, verbosity: int):
@@ -585,30 +586,26 @@ def testAlgorithms():
 
 
 # testAlgorithms()
-board: boardClass = smallBoard()
-print(board)
-solveCutsetConditioning(board, 0)
+#board: boardClass = smallBoard()
+#print(board)
+#solveCutsetConditioning(board, 0)
 
 def main():
-    n = 10  # Width of the board
-    m = 10  # Height of the board
-    k = 0  # Number of mines
+    n = 4  # Width of the board
+    m = 4  # Height of the board
+    k = 2  # Number of mines
 
     # Create a random board
     board = createRandomBoard(n, m, k)
 
-    # Print the initial board state
-    print("Initial board state:")
-    print(board)
-
     # Solve the board using backtracking
     print("Solving with backtracking:")
-    solveBacktracking(board, verbosity=2)
+    solveBacktracking(board, verbosity=0)
 
     # Solve the board using cutset conditioning
     print("Solving with cutset conditioning:")
-    solveCutsetConditioning(board, verbosity=2)
+    solveCutsetConditioning(board, verbosity=0)
 
 if __name__ == "__main__":
-    # main()
+    main()
     pass
