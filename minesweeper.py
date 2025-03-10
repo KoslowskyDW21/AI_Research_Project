@@ -406,7 +406,10 @@ def solveCols(board: boardClass, subBoard1: boardClass, subBoard2: boardClass, x
     answer: list[Tuple[int, int]] = [(x, y) for (x, y) in minesSet]
     return answer
 
-
+# Author: Jeff Krug
+# Runs cutset conditioning on a board of minesweeper to determine if it is 
+# solvable
+# Algorithm for cutset conditiong: https://www.forns.lmu.build/classes/spring-2019/cmsi-282/lecture-13M.html
 def cutsetConditioning(board: boardClass, verbosity: int):
     answer: list[Tuple[int, int]]
 
@@ -475,7 +478,9 @@ def cutsetConditioning(board: boardClass, verbosity: int):
         answer = solveRows(board, subBoards[0], subBoards[1], y, verbosity) 
 
     return answer
-    
+
+# Author: Jeff Krug
+# Tests the runtime of cutset conditioning
 def solveCutsetConditioning(board: boardClass, verbosity: int):
     global numAllocations
     global numBoardsSolved
